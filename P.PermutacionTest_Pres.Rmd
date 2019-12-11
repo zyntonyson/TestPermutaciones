@@ -1,0 +1,260 @@
+---
+title: Prueba de permutaciones
+subtitle:  
+author: Román Castillo
+date: 
+fontsize: 10pt
+output:
+  beamer_presentation:
+    #keep_tex: true
+    #toc: true
+    slide_level: 3
+    includes:
+      in_header: preambulo.txt
+      after_body: after.txt
+---
+
+
+
+
+### Prueba de permutaciones
+
+
+La prueba de permutación es un método no paramétrico (de distribución libre) probar que una muestra pertenece cierta distribución $F$ no especificada.
+
+\bigskip El p-valor se calcula al conocer el conjunto **S** de datos observados pero sin saber (o ignorando) qué valor de datos corresponde a $X_ 1$, $X_2$ así sucesivamente. 
+
+
+\bigskip El cálculo hace uso del hecho de que, condicional al conjunto de valores de datos S, cada una de las $N!$ \textcolor{clemsonorange}{(distribución de permutación)}, posibles formas de asignar estos valores N a los datos originales son igualmente probables cuando a hipótesis nula es cierta.
+
+
+### Prueba de permutaciones (algoritmo)
+
+
+1.  Dado el estadístico $T(X_1,X_2,\dots,X_N)$, calcula $T_{obs}$ con los datos obtenidos en la muestra
+
+2.  Permuta los datos y recalcula $T_i$ para i-ésima permutación
+
+3. Repetir el paso anterior hasta computar las $N!$ permutaciones de los datos y así obtener $T_1,T_2,\dots,T_N!$
+
+4. El *p-valor* se calcula por:
+$$\mbox{p-value}=\mathbb{P}(T>t_{obs})=\frac{1}{N!}\sum_{j=1}^{N!}I(T_j>t_{obs})$$
+
+Se obtiene una probabilidad exacta, no una aproximación
+
+
+### 
+
+**Ejemplo** Consideremos un conjunto de datos $A:(7,5,8)$ y definamos a $T()=(X_1+X_2-X_3)$ ¿Hay evidencia que pertenecen a la misma $F$?
+
+* Calculamos $T$ con los datos observados $T_{obs}=(7+5-8)=4$
+
+* Permutamos y calculamos $T$ para cada permutación
+```{r echo=FALSE,fig.align='center',out.width='60%'}
+library(gtools)
+library(knitr)
+library(descr)
+
+Toy_1<-c(7,5,8)
+l<-as.numeric(length(Toy_1))
+permutaciones<-permutations(l,l,Toy_1)
+Estadistico<-permutaciones%*%matrix(c(1,1,-1),3,1)
+permutaciones<-data.frame(permutaciones,Estadistico)
+names(permutaciones)<-c("X1","X2","X3","T")
+kable(permutaciones, caption = "Permutaciones y estadístico")
+
+```
+
+$$\mbox{p-valor}=P(Y>4)=4/6$$
+
+###
+
+**Ejemplo 1** Un grupo de estudiantes recibieron ayuda extraclase, se muestran las calificaciones del grupo durante las seis semanas que duró la ayuda: 
+
+    72,69,74,78,75,79. 
+
+¿Existe evidencia de una mejoría en el desempeño durante el tiempo que se brindo la asesoría?
+
+
+**Solución** Probemos la hipotesis alternativa:
+
+    H0:"El desempeño es el mismo"
+    HA:"Hay mejoría (incremento) en el desempeño"  
+
+
+Definamos a $T()=\sum_{i=1}^{6}(x_i)\cdot(i)$, para la muestra se obtiene:
+$$T_{obs}=(72)(1)+(69)(2)+(74)(3)+(78)(4)+(75)(5)+(79)(6)=1593$$
+
+
+###
+
+
+Si encontramos una "proporción significativa" de valores T que sean iguales o mayores que el observado, deberiamos rechazar la hipotesís nula, ya que se tiene evidencia de un aumento en la nota con respecto al tiempo.Ahora efectuamos las permutaciones y se calcula $T$ para cada una de ellas
+
+
+```{r echo=FALSE,fig.align='center',out.width='60%'}
+library(gtools)
+library(knitr)
+library(descr)
+
+Ventas<-c(72,69,74,78,75,79)
+l<-as.numeric(length(Ventas))
+permutaciones<-permutations(l,l,Ventas)
+Estadistico<-rowSums(permutaciones%*%diag(1:l))
+permutaciones<-data.frame(cbind(permutaciones,Estadistico))
+names(permutaciones)<-c("X1","X2","X3","X4","X5","X6","T")
+seleccion<-sort(sample(1:factorial(l),8,replace = FALSE))
+kable(permutaciones[seleccion,], caption = "Permutaciones y estadístico")
+
+```
+
+###
+
+```{r echo=FALSE}
+tabla_permutaciones<-data.frame(prop.table(table(Estadistico)))
+sumt<-sum(tabla_permutaciones$Freq)
+tabla_permutaciones$Freq<-round(cumsum(tabla_permutaciones$Freq)/(sumt),2)
+names(tabla_permutaciones)<-c("T","$P(x)$")
+kable(tabla_permutaciones[c(60:70),],caption = "T de permutación")
+
+
+```
+
+Entonces $\mbox{p-valor}=P(T>1593)=1-0.98=0.02$. Hay evidencia para rechazar la hipótesis nula. Podemos asumir una mejora en el desempeño durante el periódo de ayuda
+
+###
+
+```{r echo=FALSE,fig.align='center',out.width='80%'}
+hist(Estadistico, main="Distribución del Estadístico", col = "steelblue",xlab = "t")
+
+```
+
+
+### Muestras de dos poblaciones
+
+Supongamos que $X_1,\dots,X_m \sim F_X$ y  $Y_1,\dots,Y_n \sim F_Y$ son dos muestras independientes y que bajo $H_0$ son identicamente distribuidas, sea $T(X_1,\dots,X_m,Y_1,\dots,Y_n)$ un estadístico, tal como una diferencia de medias $\overline{X_m}-\overline{Y_n}$
+
+\bigskip Ahora consideremos que $N=m+n$, y que con los datos $X_1,\dots,X_m,Y_1,\dots,Y_n$ existen $N!$ permutaciones de ellos, y que en cada caso podemos calcular valores para $T_1,\dots,T_{N!}$
+
+
+###
+
+
+**Ejemplo 2** Consideremos una muestra de la forma $(X_1,X_2,X_3,Y_1,Y_2)=(2,5,9,14,1)$. 
+
+**Solución**  Hallamos $T=|\overline{X_m}-\overline{Y_n}|$ en nuestra muestra original:
+
+
+$$T_{obs}=\left|\frac{2+5+9}{3}-\frac{14+1}{2}\right|=2.17$$
+
+```{r echo=FALSE}
+
+library(gtools)
+library(knitr)
+library(descr)
+
+muestra<-c(2,5,9,14,1)
+permutaciones<-data.frame(permutations(5,5,muestra))
+m1 <-(rowSums(permutaciones[,c(1,2,3)]))/3
+m2 <-(rowSums(permutaciones[,c(4,5)]))/2     
+DifMedia <- abs(round((m1-m2),2))
+permutaciones<-cbind(permutaciones,DifMedia)
+names(permutaciones)<-c("X1","X2","X3","Y1","Y2","T")
+seleccion<-sort(sample(1:length(DifMedia),5,replace = FALSE))
+kable(permutaciones[seleccion,],caption = "Permutaciones y Estadístico (10 obs)")
+tabbb<-data.frame(table(DifMedia))
+acumulada<-cumsum(tabbb$Freq)/sum(tabbb$Freq)
+tabbb<-data.frame(tabbb$DifMedia,acumulada)
+
+```
+
+
+###
+
+
+```{r echo=FALSE}
+kable(tabbb, caption = "Tabla de frecuencia",col.names = c("T obs","P acumulada"))
+
+```
+
+
+$\mbox{p-valor}=P(T>2.17)=1-0.40=0.60$. 
+
+
+### 
+
+
+**Ejemplo** Los *DNA microarrays* permiten a los investigadores medir los niveles de expresión de miles de genes. Los datos son los niveles de ARN mensajero (ARNm) de cada gen, que se piensa que proporciona una medida de cuánta proteína produce ese gen. A grandes rasgos, cuanto mayor sea el número, más activo será el gen. La siguiente tabla, *reproducida de Efron et al. (2001)*, muestra los niveles de expresión para los genes de diez pacientes con dos tipos de células de cáncer de hígado. Hay 2,638 genes en este experimento, pero aquí mostramos solo los dos primeros. Los datos son *log-ratios* de  de los niveles de intensidad de dos tintes de color diferentes utilizados en los *arrays*.
+
+
+\begin{figure}[h]
+\centering
+\includegraphics[height=2.5cm]{tabla_3.png}
+\end{figure}
+
+###
+
+**Solución**  Probemos si el nivel medio del gen 1 es diferente entre los dos grupos.  $\nu_1$ representa la mediana del  gen 1 del Tipo I y $\nu_2$ la del gen 1 del Tipo II.  Definimos a $T=|\nu_1-\nu_2|$, Entonces $T_{obs}:|\nu_1-\nu_2|=710$. Ahora calculemos las permutaciones y el estadístico.
+
+\bigskip
+Dado que $N=10$, hay $10!=3,628,800$ permutaciones posibles. Cuando el tamaño de la muestra crece, calcular las $N!$ permutaciones se vuelve más complicado, podemos aproximar el *p-valor* usando una aleatoria, de tamaño $B$, de todas las permutaciones y realizar el cálculo del *p-valor* con esa muestra
+
+$$\mbox{p-value} \approx P(T>t_{obs})=\frac{1}{B}\sum_{j=1}^{B}I(T>t_{obs})$$
+
+###
+
+
+Efectuamos la prueba con una muestra de 1000 de las permutaciones y obtenemos:
+
+```{r echo=FALSE}
+library(gtools)
+library(knitr)
+library(descr)
+library(tictoc)
+
+permutap_valor<-function()
+{
+data2<-c(230,-1350,-1580,-400,-760,970,110,-50,-190,-200)
+l<-length(data2)
+m<-data2[sample(1:l,l,replace=FALSE)]  
+abs(median(m[c(1:5)])-median(m[c(6:10)]))  
+}
+require(tictoc)
+tic()
+ElVector<- replicate(1000,permutap_valor())
+tiempo<-toc()
+LaTabla<-data.frame(table(ElVector))
+LaTabla$Freq<-cumsum(LaTabla$Freq)/sum(LaTabla$Freq)
+kable(LaTabla,caption = "Tabla de frecuencia",col.names = c("T obs","P acumulada"))
+```
+
+$\mbox{p-valor}=P(T>710)=1-0.954=0.046$. 
+
+
+
+
+###
+
+
+En general, cuando se trata de muestras de gran tamaño *la prueba de permutaciones* devuelve un resultado bastante similar al paramétrico. Es notorio que resulta más útil en muestras pequeñas debido al poder computacional requerido
+
+
+
+###
+
+
+
+```{example}
+
+¡Gracias! 
+
+```
+
+
+###
+
+1. Wasserman, L. (2013). All of statistics: a concise course in statistical inference. Springer Science & Business Media.
+
+2. Ross, S. M. (2014). Introduction to probability and statistics for engineers and scientists. Academic Press.
+
+3. Good, P. I. (2004). Permutation, parametric, and bootstrap tests of hypotheses (Springer series in statistics).

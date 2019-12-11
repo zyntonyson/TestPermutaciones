@@ -1,0 +1,233 @@
+---
+title: Prueba de permutación
+author: Román Castillo
+header-includes:
+  \usepackage{graphicx}
+  \usepackage{color}
+  \usepackage{fancyhdr} 
+  \pagestyle{fancy} 
+  \fancyhead[L]{\includegraphics[width=0.1\paperwidth]{\string cimat_logo.png}}
+  \fancyhead[R]{Prueba de permutación}
+output:
+  pdf_document: default
+---
+
+###DEFINICIÓN
+
+La prueba de permutación es un método no paramétrico (de distribución libre).Supongamos que queremos probar  que  $H_0:$ $X_1,\dots , X_N$ es una muestra de cierta distribución $F$ no especificada. La prueba de permutaciones se usa para este tipo de  hipótesis,  el p-valor se calcula al conocer el conjunto **S** de datos observados pero sin saber (o ignorando) qué valor de datos corresponde a $X_ 1$, $X_2$ así sucesivamente. El cálculo hace uso del hecho de que, condicional al conjunto de valores de datos S, cada una de las $N!$  posibles formas de asignar estos valores N a los datos originales son igualmente probables cuando a hipótesis nula es cierta.
+
+Consideremos a $T(X1,X_2;\dots.X_n)$ como un estadístico de la muestra, y  como la **distribución de permutación** a la que asigna masa de probabilidad de $\frac{1}{N!}$ a cada permutación $T_j$, ahora sea $t_{obs}$ el valor observado del estadístico, asumimos como  criterio de rechazo  $T>t_{obs}$:
+
+$$\mbox{p-value}=P(T>t_{obs})=\frac{1}{N!}\sum_{j=1}^{N!}I(T>t_{obs})$$
+
+La probabilidad que se obtiene es exacta y no una aproximación asíntótica.
+
+
+
+**Ejemplo 1** Un grupo de estudiantes recibieron ayuda extraclase, se muestran las calificaciones del grupo durante las seis semanas que duró la ayuda: *72,69,74,78,75,79*. ¿Existe evidencia de una mejoría en el desempeño durante el tiempo que se brindo la asesoría?
+
+
+**Solución**Probemos la hipotesis alternativa $H_A:$*"Hay mejoría (incremento) en el desempeño"* y como $H_0:$*"El desempeño es el mismo"*. En caso de la que la hipótesis alternativa sea cierta, deberiamos encontrar una correlación positiva entre las calificaciones ($x_j$) y el momento del tiempo $j$ en la que fueron tomadas. Definamos a $T()=\sum_{i=1}^{6}(x_i)\cdot(i)$, para la muestra se obtiene:
+$$T_{obs}=(72)(1)+(69)(2)+(74)(3)+(78)(4)+(75)(5)+(79)(6)=1593$$
+ 
+Si encontramos una "proporción significativa" de valores T que sean iguales o mayores que el observado, deberiamos rechazar la hipotesís nula, ya que se tiene evidencia de un aumento en la nota con respecto al tiempo.
+
+Ahora efectuamos las permutaciones y se calcula $T$ para cada una de ellas
+
+
+```{r echo=FALSE,fig.align='center',out.width='60%'}
+library(gtools)
+library(knitr)
+library(descr)
+
+Ventas<-c(72,69,74,78,75,79)
+l<-as.numeric(length(Ventas))
+permutaciones<-permutations(l,l,Ventas)
+Estadistico<-rowSums(permutaciones%*%diag(1:l))
+permutaciones<-data.frame(cbind(permutaciones,Estadistico))
+names(permutaciones)<-c("X1","X2","X3","X4","X5","X6","T")
+seleccion<-sort(sample(1:factorial(l),10,replace = FALSE))
+kable(permutaciones[seleccion,], caption = "Permutaciones y estadístico")
+tabla_permutaciones<-data.frame(prop.table(table(Estadistico)))
+sumt<-sum(tabla_permutaciones$Freq)
+tabla_permutaciones$Freq<-round(cumsum(tabla_permutaciones$Freq)/(sumt),2)
+names(tabla_permutaciones)<-c("T","$P(x$")
+kable(tabla_permutaciones[c(64:70),])
+hist(Estadistico, main="T")
+```
+
+Entonces $\mbox{p-valor}=P(T>1593)=1-0.98=0.02$. Hay evidencia para rechazar la hipótesis nula. Podemos asumir una mejora en el desempeño durante el periódo de ayuda
+
+
+
+
+###DOS MUESTRAS
+
+
+
+Suponga dos muestras independientes:
+$$\begin{array}
+{lll}
+X_1,\dots X_m \sim F_X&  & Y_1,\dots Y_n \sim F_Y
+\end{array}$$
+
+Entonces deseamos poner a prueba:
+
+$$\begin{array}
+{lll}
+H_0:F_X=F_Y&\mbox{versus} & H_1:F_X \neq F_Y
+\end{array}$$
+
+
+Sea $T(X_1,\dots X_m , Y_1,\dots Y_n )$ un estadístico con las muestras, tal como $|\bar X_m-\bar Y_n|$, tenemos un total de $N=m+n$ observaciones, con ellas podemos formar $N!$ permutaciones y calcular $T$ para cada una de ellas $(T_1,\dots,T_{N!})$ y obtener el *p-valor* del $T_{obs}$
+
+
+
+**Ejemplo 2** Consideremos una muestra de la forma $(X_1,X_2,X_3,Y_1,Y_2)=(2,5,9,14,1)$. 
+
+
+**Solución**  Hallamos $T$ en nuestra muestra original:
+$$T=\left|\frac{2+5+9}{3}-\frac{14+1}{2}\right|=2.17$$
+
+
+las permutaciones de la muestra son:
+
+
+```{r echo=FALSE}
+
+library(gtools)
+library(knitr)
+library(descr)
+
+muestra<-c(2,5,9,14,1)
+permutaciones<-data.frame(permutations(5,5,muestra))
+m1 <-(rowSums(permutaciones[,c(1,2,3)]))/3
+m2 <-(rowSums(permutaciones[,c(4,5)]))/2     
+DifMedia <- abs(round((m1-m2),2))
+permutaciones<-cbind(permutaciones,DifMedia)
+names(permutaciones)<-c("X1","X2","X3","Y1","Y2","T")
+seleccion<-sort(sample(1:length(DifMedia),10,replace = FALSE))
+kable(permutaciones[seleccion,],caption = "Permutaciones y Estadístico (10 obs)")
+tabbb<-data.frame(table(DifMedia))
+acumulada<-cumsum(tabbb$Freq)/sum(tabbb$Freq)
+tabbb<-data.frame(tabbb$DifMedia,acumulada)
+kable(tabbb, caption = "Tabla de frecuencia",col.names = c("T obs","P acumulada"))
+
+```
+
+Entonces $\mbox{p-valor}=P(T>2.17)=1-0.40=0.60$. No hay evidencia para rechazar la hipótesis nula. Podemos asumir que las muestras pertenecen a la misma población
+
+
+
+**Ejemplo 3** Los *DNA microarrays* permiten a los investigadores medir los niveles de expresión de miles de genes. Los datos son los niveles de ARN mensajero (ARNm) de cada gen, que se piensa que proporciona una medida de cuánta proteína produce ese gen. A grandes rasgos, cuanto mayor sea el número, más activo será el gen. La siguiente tabla, *reproducida de Efron et al. (2001)*, muestra los niveles de expresión para los genes de diez pacientes con dos tipos de células de cáncer de hígado. Hay 2,638 genes en este experimento, pero aquí mostramos solo los dos primeros. Los datos son *log-ratios* de  de los niveles de intensidad de dos tintes de color diferentes utilizados en los *arrays*.
+
+
+\begin{figure}[h]
+\centering
+\includegraphics[height=3cm]{tabla_3.png}
+\end{figure}
+
+
+**Solución**  Probemos si el nivel medio del gen 1 es diferente entre los dos grupos.  $\nu_1$ representa la mediana del  gen 1 del Tipo I y $\nu_2$ la del gen 1 del Tipo II.  Definimos a $T=|\nu_1-\nu_2|$, Probemos que $H_0:|\nu_1-\nu_2|=710$. Ahora estimamos la distribución de permutaciones por simulación, se presenta el resultado a continuación.
+
+
+
+```{r echo=FALSE ,eval=FALSE}
+
+library(gtools)
+library(knitr)
+library(descr)
+library(tictoc)
+
+
+data2<-c(230,-1350,-1580,-400,-760,970,110,-50,-190,-200)
+l<-length(data2)
+tic()
+permutaciones<-data.frame(permutations(l,l,data2))
+mediana1<-apply(permutaciones[,c(1:5)],1,median)
+mediana2<-apply(permutaciones[,c(6:10)],1,median)
+DifMedia <- abs(mediana1-mediana2)
+tiempo<-toc()
+permutaciones<-cbind(permutaciones,DifMedia)
+names(permutaciones)<-c("X1","X2","X3","X4","X5","X6","X7","X8","X9","X10","T")
+seleccion<-sort(sample(1:length(DifMedia),10,replace = FALSE))
+kable(permutaciones[seleccion,],caption = "Permutaciones y Estadístico (10 obs)")
+tab1a_2prop<-data.frame(table(DifMedia))
+tab1a_2acumulada<-round(cumsum(tab1a_2prop$Freq)/sum(tab1a_2prop$Freq),3)
+tab1a_2prop<-data.frame(tab1a_2prop$DifMedia,tab1a_2acumulada)
+kable(tab1a_2prop, caption = "Tabla de frecuencia",col.names = c("T obs","P acumulada"))
+
+```
+
+
+
+Encontramos que el valor p estimado es .045. Por lo tanto, si usamos un nivel de significancia de $\alpha =0.05$, diríamos que existe evidencia para rechazar la hipótesis nula de no diferencia.
+
+Cuando el tamaño de la muestra crece, calcular las $N!$ permutaciones se vuelve más complicado, podemos aproximar el *p-valor* usando una aleatoria, de tamaño $B$, de todas las permutaciones y realizar el cálculo del *p-valor* con esa muestra
+
+$$\mbox{p-value} \approx P(T>t_{obs})=\frac{1}{B}\sum_{j=1}^{B}I(T>t_{obs})$$
+
+Repetimos el ejercicio anterior usando 1,000 de las 3,628,800 permutaciones posibles
+
+
+```{r echo=FALSE}
+library(gtools)
+library(knitr)
+library(descr)
+library(tictoc)
+
+permutap_valor<-function()
+{
+data2<-c(230,-1350,-1580,-400,-760,970,110,-50,-190,-200)
+l<-length(data2)
+m<-data2[sample(1:l,l,replace=FALSE)]  
+abs(median(m[c(1:5)])-median(m[c(6:10)]))  
+}
+
+require(tictoc)
+tic()
+ElVector<- replicate(1000,permutap_valor())
+tiempo<-toc()
+LaTabla<-data.frame(table(ElVector))
+LaTabla$Freq<-cumsum(LaTabla$Freq)/sum(LaTabla$Freq)
+kable(LaTabla)
+```
+
+
+Obtenemos un *p-valor* de 0.46, prácticamente idéntico al que se obtiene con todas las permutaciones. En general, cuando se trata de muestras de gran tamaño *la prueba de permutaciones* devuelve un resultado bastante similar al paramétrico. Es notorio que resulta más útil en muestras pequeñas debido al poder computacional requerido
+
+
+####EJERCICIOS
+
+
+1. Un jugador de béisbol tiene la reputación de comenzar "flojo" al inicio de una temporada, y luego mejorar continuamente a medida que la temporada avanza. Los siguientes datos son la cantidad de hits que tiene en las series consecutivas de juegos de la temporada, ¿ Hay evidencia que valide  la reputación del jugador? 
+
+     8, 3, 7, 7, 13, 6, 12, 4, 4, 6
+
+
+
+2.  Un grupo de 10 ratones se expuso fuente de radiación. El grupo se dividió al azar en dos subgrupos. Los ratones del primer subgrupo vivían en un entorno normal de laboratorio, mientras que los del otro se criaron en un entorno especial sin gérmenes. Los siguientes datos muestran los días que vivieron los ratones después de la radiación: 
+
+     **Grupo 1**: 133, 145, 156, 159, 164
+ 
+      **Grupo 2**: 145, 148, 157, 171, 178 
+ 
+¿Hay evidencia de que los tiempos de vida en los grupos sea diferente? 
+
+
+
+
+
+
+####REFERENCIAS
+
+
+1. Wasserman, L. (2013). All of statistics: a concise course in statistical inference. Springer Science & Business Media.
+
+2. Ross, S. M. (2014). Introduction to probability and statistics for engineers and scientists. Academic Press.
+
+3. Good, P. I. (2004). Permutation, parametric, and bootstrap tests of hypotheses (Springer series in statistics).
+
+
+
+

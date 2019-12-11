@@ -1,0 +1,90 @@
+---
+title: "R Notebook"
+output:
+  word_document: default
+  pdf_document: default
+  html_notebook: default
+---
+
+1. Un jugador de béisbol tiene la reputación de comenzar "flojo" al inicio de una temporada, y luego mejorar continuamente a medida que la temporada avanza. Los siguientes datos son la cantidad de hits que tiene en las series consecutivas de juegos de la temporada, ¿ Hay evidencia que valide  la reputación del jugador? 
+
+     8, 3, 7, 7, 13, 6, 12, 4, 4, 6
+     
+     
+```{r}
+
+permutacion<-function(){
+  x<-c(8, 3, 7, 7, 13, 6, 12, 4, 4, 6)
+  n<-length(x)
+  ordperm<-sample(1:n, n, replace = FALSE)
+  x<-x[ordperm]
+  sum(x*c(1:n))
+}
+
+racha<-c(8, 3, 7, 7, 13, 6, 12, 4, 4, 6)
+observado<-sum((racha)*c(1:length(racha)))
+replicas<-10000
+ObservacionesEstadistico<-replicate(replicas,permutacion())
+pvalor<-sum(ObservacionesEstadistico>observado)/replicas
+pvalor
+
+
+
+```
+
+
+
+
+2.  Un grupo de 10 ratones se expuso fuente de radiación. El grupo se dividió al azar en dos subgrupos. Los ratones del primer subgrupo vivían en un entorno normal de laboratorio, mientras que los del otro se criaron en un entorno especial sin gérmenes. Los siguientes datos muestran los días que vivieron los ratones después de la radiación: 
+
+    **Grupo 1**: 133, 145, 156, 159, 164
+    **Grupo 2**: 145, 148, 157, 171, 178 
+ 
+¿Hay evidencia de que los tiempos de vida en los grupos sea diferente? 
+
+
+
+```{r}
+gpo1<-c(133, 145, 156, 159, 164)
+gpo2<-c(145, 148, 157, 171, 178)
+muestra<-c(gpo1,gpo2)
+replicas<-10000
+
+#### usando media
+observado1<-abs(mean(gpo1)-mean(gpo2))
+
+pruebaMedia<-function(){
+gpo1<-c(133, 145, 156, 159, 164)
+gpo2<-c(145, 148, 157, 171, 178)
+muestra<-c(gpo1,gpo2)
+n<-length(muestra)
+n1<-length(gpo1)
+perm<-sample(1:n,n,replace = FALSE)
+PerMuestra<-muestra[perm]
+abs(mean(PerMuestra[c(1:n1)])-mean(PerMuestra[-c(1:n1)]))
+}
+
+Tpermuta<-replicate(replicas,pruebaMedia())
+pvalor1<-sum(Tpermuta>observado1)/replicas
+cat("P-valor usando media:",pvalor1)
+print("")
+#### usando mediana
+observado2<-abs(median(gpo1)-median(gpo2))
+
+pruebaMediana<-function(){
+gpo1<-c(133, 145, 156, 159, 164)
+gpo2<-c(145, 148, 157, 171, 178)
+muestra<-c(gpo1,gpo2)
+n<-length(muestra)
+n1<-length(gpo1)
+perm<-sample(1:n,n,replace = FALSE)
+PerMuestra<-muestra[perm]
+abs(median(PerMuestra[c(1:n1)])-median(PerMuestra[-c(1:n1)]))
+}
+
+Tpermuta2<-replicate(replicas,pruebaMediana())
+pvalor2<-sum(Tpermuta2>observado2)/replicas
+cat("P-valor usando mediana:",pvalor2)
+
+```
+
